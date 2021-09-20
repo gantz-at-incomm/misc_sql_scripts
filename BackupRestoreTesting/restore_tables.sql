@@ -84,3 +84,11 @@ go
 
 insert into DatabasesToRestore (AvailabilityGroup, Name)
 VALUES ('SUIDSSQL034PLIS','AuthorizationDB')
+
+
+insert into DatabaseRestoreConfig (BackupFileServer, DataDirectory, DBMailProfile, NotifyEmailAddressList)
+values ('\\SLVCEISL01V-DEV.uss.net\IDSSQLBackups_BSG\SUIDSSQL034CLU$SUIDSSQL034PLIS\'
+, 'D:\SqlData\'
+, 'figureoutlater'
+, 'mgantz@incomm.com'
+)
