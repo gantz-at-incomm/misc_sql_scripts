@@ -60,7 +60,8 @@ BEGIN
 			SET [PassedDBCCChecks] = 1
 			WHERE [RestoredName] = @dbName
 				AND [RestoredDate] = cast(getdate() as date)
-
+			PRINT 'Clean DBCCCheck - [' + @dbName +']';
+			/*
 			PRINT 'Clean DBCCCheck - dropping database [' + @dbName +']';
 			SET @dropCmd = 'Alter Database [' + @dbName + '] Set Single_User With Rollback Immediate; Drop Database [' + @dbName + '];';
 			PRINT(@dropCmd);
@@ -69,6 +70,7 @@ BEGIN
 			BEGIN
 				EXEC(@dropCmd);
 			END
+			*/
 		END
 	ELSE
 		BEGIN
