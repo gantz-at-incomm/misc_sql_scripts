@@ -1,6 +1,11 @@
 USE [master]
 GO
-
+IF OBJECT_ID('DatabaseRestoreConfig') IS NOT NULL
+	DROP TABLE dbo.DatabaseRestoreConfig
+IF OBJECT_ID('DatabaseRestoreLog') IS NOT NULL
+	DROP TABLE dbo.DatabaseRestoreLog
+IF OBJECT_ID('DBCC_History_Log') IS NOT NULL
+	DROP TABLE dbo.DBCC_History_Log
 IF OBJECT_ID('DatabasesToRestore') IS NOT NULL
 	DROP TABLE dbo.DatabasesToRestore
 
@@ -13,8 +18,17 @@ CREATE TABLE [dbo].DatabasesToRestore(
 ) ON [PRIMARY]
 GO
 
-IF OBJECT_ID('DatabaseRestoreLog') IS NOT NULL
-	DROP TABLE dbo.DatabaseRestoreLog
+CREATE TABLE [dbo].DatabaseRestoreConfig(
+	[Id] [int] IDENTITY(1,1) NOT NULL,
+	[BackupFileServer] varchar(2000) NOT NULL,
+	DBMailProfile sysname not null,
+	NotifyEmailAddressList VARCHAR(2000) NOT NULL,
+	DataDirectory varchar(2000) not null,
+	CONSTRAINT [PK_DatabaseRestoreConfig] PRIMARY KEY CLUSTERED ([Id] ASC)
+) ON [PRIMARY]
+GO
+
+
 
 CREATE TABLE dbo.DatabaseRestoreLog
 (
@@ -31,8 +45,7 @@ CREATE TABLE dbo.DatabaseRestoreLog
 	CONSTRAINT [FK_DatabaseRestoreLog_DatabasesToRestore] FOREIGN KEY ([DatabaseId]) REFERENCES dbo.DatabasesToRestore ([Id])
 );
 
-IF OBJECT_ID('DBCC_History_Log') IS NOT NULL
-	DROP TABLE dbo.DBCC_History_Log
+
 
 CREATE TABLE dbo.DBCC_History_Log
 (
@@ -64,3 +77,10 @@ CREATE TABLE dbo.DBCC_History_Log
 	[Allocation] [int] NULL,
 	[TimeStamp] [datetime] NULL CONSTRAINT [DF_dbcc_history_TimeStamp] DEFAULT (GETDATE())
 );
+
+
+
+go
+
+insert into DatabasesToRestore (AvailabilityGroup, Name)
+VALUES ('SUIDSSQL034PLIS','AuthorizationDB')

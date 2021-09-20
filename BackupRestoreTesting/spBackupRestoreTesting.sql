@@ -5,12 +5,23 @@ AS
 BEGIN
 	DECLARE @fileSearch nvarchar(500) = '',
 		@backupFile nvarchar(500),
-		@data_dir nvarchar(100) = 'F:\DBRestore\', 
+		@data_dir nvarchar(100) , 
 		@cmd nvarchar(max),
 		@dropCmd nvarchar(500),
 		@RestoredDBName sysname,
 		@backupPath NVARCHAR(500) = '',
-		@error nvarchar(600);
+		@error nvarchar(600),
+		@recipients varchar(2000),
+		@profile_name sysname,
+		@backup_file_server varchar(2000)
+		;
+
+	SELECT @data_dir = DataDirectory
+	, @recipients = NotifyEmailAddressList
+	, @profile_name = DBMailProfile
+	, @backup_file_server = BackupFileServer
+	FROM dbo.DatabaseRestoreConfig
+	WHERE Id = 1
 
 	-- Set the time we started the restore process so we know when we want to exit 
 	-- if it hits the TimeLimit, we'll stop for the day
@@ -80,7 +91,7 @@ BEGIN
 
 		PRINT CONCAT('Restoring : ', @database_name, ' in AG ', @ag_name, ' last restored date: ', @last_restore_date)
 
-		SET @backupPath = CONCAT('\\fileserver\Backups\SQL\', @ag_name, '\', @database_name, '\')
+		SET @backupPath = CONCAT(@backup_file_server, @ag_name, '\', @database_name, '\')
 		PRINT @backupPath
 
 		SET @fileSearch = 'DIR *.bak /b /O:D ' + @backupPath;
@@ -158,7 +169,7 @@ BEGIN
 					BEGIN
 						SET @error = 'Restore of database ''' + @RestoredDBName + ''' failed. Check the log on the server.' ;
 						-- send an email alert to that the DBCC CHECKDB failed for the restored item
-						EXEC msdb.dbo.sp_send_dbmail @profile_name = 'Mail', @recipients = 'useyourown@email.com', @subject = @error, @body = @error;
+						EXEC msdb.dbo.sp_send_dbmail @profile_name =  @profile_name, @recipients = @recipients, @subject = @error, @body = @error;
 						RAISERROR(@error, 18, 1);
 					END
 
@@ -173,12 +184,13 @@ BEGIN
 		DELETE FROM @fileList
 		DELETE FROM @FileListTable
 	END
-
+	/*
+	Move this to it's own job
 	-- once we're done, let's clear out the DBCC_History_Log table a bit, cause it grows fast
 	DELETE
 	FROM dbo.DBCC_History_Log
 	WHERE DBCCCheckDate < GETDATE() - 30;
-
+	*/
 	-- send an email to sql-alerts with a count of what was done and what passed
 	DECLARE @TotalDatabasesRestored int 
 	DECLARE @TotalPassedCheck int 
@@ -192,8 +204,8 @@ BEGIN
 	DECLARE @subject nvarchar(100) = CONCAT('Database restore results for ', cast(getdate() as date))
 	DECLARE @body nvarchar(500) = CONCAT('Total Databases Restored: ', @TotalDatabasesRestored, 'Total Databases Passing DBCC Check:',  @TotalPassedCheck)
 
-	EXEC msdb.dbo.sp_send_dbmail @profile_name = 'Mail', 
-		@recipients = 'useyourown@email.com', 
+	EXEC msdb.dbo.sp_send_dbmail @profile_name =  @profile_name , 
+		@recipients = @recipients, 
 		@subject = @subject, 
 		@body = @body;
 
